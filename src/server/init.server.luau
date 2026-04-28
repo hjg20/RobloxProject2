@@ -130,7 +130,7 @@ local metaByPlayer: { [Player]: MetaState } = {}
 local runsByPlayer: { [Player]: RunState } = {}
 local rngByPlayer: { [Player]: Random } = {}
 local scratchByPlayer: { [Player]: any } = {}
-local blackjackByPlayer: { [Player]: any } = {}
+local CardBattlesByPlayer: { [Player]: any } = {}
 local arenaSlotByPlayer: { [Player]: number } = {}
 local arenaSlotOccupied: { [number]: boolean } = {}
 local handleAction: (Player, string, any?) -> () = function() end
@@ -152,7 +152,7 @@ local function getUpgrade(meta: MetaState?, upgradeName: string): number
 end
 
 local function isGambleUnlocked(meta: MetaState?, gambleName: string): boolean
-	if gambleName == "ScratchOff" then
+	if gambleName == "WhackAMole" then
 		return true
 	end
 	return meta ~= nil and meta.Unlocks ~= nil and meta.Unlocks[gambleName] == true
@@ -394,7 +394,7 @@ local function publicState(player: Player)
 			ShopItems = GameConfig.ShopItems,
 			MetaUpgrades = GameConfig.MetaUpgrades,
 			GameUnlocks = GameConfig.GameUnlocks,
-			UnlockOrder = { "Blackjack", "Roulette", "LootBox" },
+			UnlockOrder = { "CardBattles", "GuessingGame", "MysteryWheel" },
 			RoomsToBoss = GameConfig.Run.RoomsToBoss,
 		},
 	}
@@ -1179,7 +1179,7 @@ end
 
 local function buildScratchCounter(folder: Folder, player: Player, origin: Vector3)
 	local promptCallback = function(triggerPlayer)
-		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "ScratchOff" })
+		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "WhackAMole" })
 	end
 	local creatorPart = placeCreatorProp(folder, "WhackAMole", "WhackAMoleMachine", CFrame.new(origin + Vector3.new(-22, 2, -25)), "Play", "Whack-a-Mole", promptCallback, origin.Y, {
 		"WhackAMole",
@@ -1197,9 +1197,9 @@ local function buildScratchCounter(folder: Folder, player: Player, origin: Vecto
 	addPrompt(counter, "Play", "Whack-a-Mole", promptCallback)
 end
 
-local function buildBlackjackTable(folder: Folder, player: Player, origin: Vector3)
+local function buildCardBattlesTable(folder: Folder, player: Player, origin: Vector3)
 	local promptCallback = function(triggerPlayer)
-		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "Blackjack" })
+		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "CardBattles" })
 	end
 	local creatorPart = placeCreatorProp(folder, "CardBattle", "CardBattleMachine", CFrame.new(origin + Vector3.new(2, 2, -25)), "Play", "Card Battle", promptCallback, origin.Y, {
 		"CardBattle",
@@ -1215,9 +1215,9 @@ local function buildBlackjackTable(folder: Folder, player: Player, origin: Vecto
 	addPrompt(tableTop, "Play", "Card Battle", promptCallback)
 end
 
-local function buildRouletteTable(folder: Folder, player: Player, origin: Vector3)
+local function buildGuessingGameTable(folder: Folder, player: Player, origin: Vector3)
 	local promptCallback = function(triggerPlayer)
-		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "Roulette" })
+		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "GuessingGame" })
 	end
 	local creatorPart = placeCreatorProp(folder, "GuessingGame", "GuessingGameMachine", CFrame.new(origin + Vector3.new(24, 2, -25)), "Play", "Guessing Game", promptCallback, origin.Y, {
 		"GuessingGame",
@@ -1238,7 +1238,7 @@ end
 
 local function buildLootWheel(folder: Folder, player: Player, origin: Vector3)
 	local promptCallback = function(triggerPlayer)
-		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "LootBox" })
+		openInteractionForOwner(player, triggerPlayer, { Event = "ArcadeGame", GambleName = "MysteryWheel" })
 	end
 	local creatorPart = placeCreatorProp(folder, "MysteryWheel", "MysteryWheelPlatform", CFrame.new(origin + Vector3.new(40, 2, -25)), "Play", "Mystery Wheel", promptCallback, origin.Y, {
 		"MysteryWheel",
@@ -1262,13 +1262,13 @@ end
 local function buildCasinoStations(folder: Folder, player: Player, origin: Vector3)
 	local meta = metaByPlayer[player]
 	buildScratchCounter(folder, player, origin)
-	if isGambleUnlocked(meta, "Blackjack") then
-		buildBlackjackTable(folder, player, origin)
+	if isGambleUnlocked(meta, "CardBattles") then
+		buildCardBattlesTable(folder, player, origin)
 	end
-	if isGambleUnlocked(meta, "Roulette") then
-		buildRouletteTable(folder, player, origin)
+	if isGambleUnlocked(meta, "GuessingGame") then
+		buildGuessingGameTable(folder, player, origin)
 	end
-	if isGambleUnlocked(meta, "LootBox") then
+	if isGambleUnlocked(meta, "MysteryWheel") then
 		buildLootWheel(folder, player, origin)
 	end
 end
@@ -1278,24 +1278,24 @@ local function attachBaseTemplateInteractions(room: Instance, player: Player)
 	local run = runsByPlayer[player]
 	local machineDefinitions = {
 		{
-			GambleName = "ScratchOff",
+			GambleName = "WhackAMole",
 			DisplayName = "Whack-a-Mole",
-			Names = { "WhackAMoleMachine", "WhackAMole", "Whack A Mole", "Whack-a-Mole", "ScratchOffCounter" },
+			Names = { "WhackAMoleMachine", "WhackAMole", "Whack A Mole", "Whack-a-Mole", "WhackAMoleCounter" },
 		},
 		{
-			GambleName = "Blackjack",
+			GambleName = "CardBattles",
 			DisplayName = "Card Battle",
-			Names = { "CardBattleMachine", "CardBattle", "Card Battle", "BlackjackTable" },
+			Names = { "CardBattleMachine", "CardBattle", "Card Battle", "CardBattlesTable" },
 		},
 		{
-			GambleName = "Roulette",
+			GambleName = "GuessingGame",
 			DisplayName = "Guessing Game",
-			Names = { "GuessingGameMachine", "GuessingGame", "Guessing Game", "RouletteTable" },
+			Names = { "GuessingGameMachine", "GuessingGame", "Guessing Game", "GuessingGameTable" },
 		},
 		{
-			GambleName = "LootBox",
+			GambleName = "MysteryWheel",
 			DisplayName = "Mystery Wheel",
-			Names = { "MysteryWheelPlatform", "MysteryWheel", "Mystery Wheel", "LootWheel", "LootBox" },
+			Names = { "MysteryWheelPlatform", "MysteryWheel", "Mystery Wheel", "LootWheel", "MysteryWheel" },
 		},
 	}
 
@@ -1914,10 +1914,10 @@ end
 
 local function loadMeta(player: Player)
 	local defaultMeta = {
-		Tokens = 0,
+		Tokens = 100,
 		Upgrades = {},
 		Unlocks = {},
-		Wins = 0,
+		Wins = 100,
 	}
 
 	local ok, data = true, nil
@@ -2086,12 +2086,12 @@ local function drawWeightedCard(player: Player, currentCards, preferSafe: boolea
 	return { Rank = "K", Value = 10 }
 end
 
-local function fireBlackjackState(player: Player, gameState, status: string, payout: number?)
+local function fireCardBattle(player: Player, gameState, status: string, payout: number?)
 	local ended = gameState.Ended == true
 	gambleResultEvent:FireClient(player, {
-		Event = "BlackjackState",
-		GambleName = "Blackjack",
-		DisplayName = GameConfig.Gambles.Blackjack.DisplayName,
+		Event = "CardBattle",
+		GambleName = "CardBattles",
+		DisplayName = GameConfig.Gambles.CardBattles.DisplayName,
 		PlayerCards = gameState.PlayerCards,
 		DealerCards = gameState.DealerCards,
 		PlayerTotal = handTotal(gameState.PlayerCards),
@@ -2101,19 +2101,19 @@ local function fireBlackjackState(player: Player, gameState, status: string, pay
 		Ended = ended,
 		Cash = payout or 0,
 		Tickets = payout or 0,
-		Cost = GameConfig.Gambles.Blackjack.Cost,
+		Cost = GameConfig.Gambles.CardBattles.Cost,
 	})
 end
 
-local function finishBlackjack(player: Player, gameState, status: string, payout: number)
+local function finishCardBattles(player: Player, gameState, status: string, payout: number)
 	local run = runsByPlayer[player]
 	gameState.Ended = true
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 	if run and payout > 0 then
 		run.Tickets = (run.Tickets or 0) + payout
 	end
-	sendMessage(player, `{GameConfig.Gambles.Blackjack.DisplayName}: {status} +{payout} Tickets`)
-	fireBlackjackState(player, gameState, status, payout)
+	sendMessage(player, `{GameConfig.Gambles.CardBattles.DisplayName}: {status} +{payout} Tickets`)
+	fireCardBattle(player, gameState, status, payout)
 	pushState(player)
 end
 
@@ -2138,7 +2138,7 @@ local ROULETTE_RED: { [number]: boolean } = {
 	[36] = true,
 }
 
-local function rouletteSlots(): { any }
+local function guessingGameSlots(): { any }
 	local slots = { "0", "00" }
 	for number = 1, 36 do
 		table.insert(slots, number)
@@ -2146,16 +2146,16 @@ local function rouletteSlots(): { any }
 	return slots
 end
 
-local function rouletteColor(value): string
+local function guessingGameColor(value): string
 	if value == "0" or value == "00" then
 		return "Green"
 	end
 	return if ROULETTE_RED[value] then "Red" else "Black"
 end
 
-local function rouletteBetWins(value, betType: string, betValue): boolean
+local function guessingGameBetWins(value, betType: string, betValue): boolean
 	if betType == "Color" then
-		return rouletteColor(value) == betValue
+		return guessingGameColor(value) == betValue
 	elseif betType == "Parity" then
 		if type(value) ~= "number" then
 			return false
@@ -2170,8 +2170,8 @@ local function rouletteBetWins(value, betType: string, betValue): boolean
 	return false
 end
 
-local function startScratchOff(player: Player, run: RunState)
-	local gamble = GameConfig.Gambles.ScratchOff
+local function startWhackAMole(player: Player, run: RunState)
+	local gamble = GameConfig.Gambles.WhackAMole
 	local rng = rngByPlayer[player] or Random.new()
 	spendGambleUse(run)
 	run.Cash -= gamble.Cost
@@ -2188,12 +2188,12 @@ local function startScratchOff(player: Player, run: RunState)
 		Ended = false,
 	}
 	scratchByPlayer[player] = gameState
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 
 	sendMessage(player, "Whack-a-Mole started. Hit real moles, avoid fakes.")
 	gambleResultEvent:FireClient(player, {
 		Event = "WhackMoleStart",
-		GambleName = "ScratchOff",
+		GambleName = "WhackAMole",
 		DisplayName = gamble.DisplayName,
 		Cost = gamble.Cost,
 		Slots = gameState.Slots,
@@ -2228,7 +2228,7 @@ local function startScratchOff(player: Player, run: RunState)
 
 			gambleResultEvent:FireClient(player, {
 				Event = "WhackMolePop",
-				GambleName = "ScratchOff",
+				GambleName = "WhackAMole",
 				Round = round,
 				MoleSlot = activeSlot,
 				FakeSlot = fakeSlot,
@@ -2255,10 +2255,10 @@ local function startScratchOff(player: Player, run: RunState)
 		sendMessage(player, `Whack-a-Mole finished. +{tickets} Tickets`)
 		gambleResultEvent:FireClient(player, {
 			Event = "WhackMoleEnd",
-			GambleName = "ScratchOff",
+			GambleName = "WhackAMole",
 			Score = gameState.Score,
 			Tickets = tickets,
-			Cost = GameConfig.Gambles.ScratchOff.Cost,
+			Cost = GameConfig.Gambles.WhackAMole.Cost,
 		})
 		pushState(player)
 	end)
@@ -2280,7 +2280,7 @@ local function revealScratch(player: Player, payload: any?)
 	end
 
 	gameState.HitThisRound = true
-	local gamble = GameConfig.Gambles.ScratchOff
+	local gamble = GameConfig.Gambles.WhackAMole
 	local correct = slot == gameState.ActiveSlot
 	local fake = slot == gameState.FakeSlot
 	local delta
@@ -2295,7 +2295,7 @@ local function revealScratch(player: Player, payload: any?)
 
 	gambleResultEvent:FireClient(player, {
 		Event = "WhackMoleHit",
-		GambleName = "ScratchOff",
+		GambleName = "WhackAMole",
 		Round = round,
 		Slot = slot,
 		Correct = correct,
@@ -2311,8 +2311,8 @@ local function revealScratch(player: Player, payload: any?)
 	pushState(player)
 end
 
-local function startBlackjack(player: Player, run: RunState)
-	local gamble = GameConfig.Gambles.Blackjack
+local function startCardBattles(player: Player, run: RunState)
+	local gamble = GameConfig.Gambles.CardBattles
 	spendGambleUse(run)
 	run.Cash -= gamble.Cost
 	scratchByPlayer[player] = nil
@@ -2322,20 +2322,20 @@ local function startBlackjack(player: Player, run: RunState)
 		DealerCards = { drawCard(player), drawCard(player) },
 		Ended = false,
 	}
-	blackjackByPlayer[player] = gameState
+	CardBattlesByPlayer[player] = gameState
 
 	local playerTotal = handTotal(gameState.PlayerCards)
 	if playerTotal == 21 then
-		finishBlackjack(player, gameState, "Perfect 21!", gamble.BlackjackPayout)
+		finishCardBattles(player, gameState, "Perfect 21!", gamble.CardBattlesPayout)
 	else
 		sendMessage(player, "Card Battle started. Hit or stand.")
-		fireBlackjackState(player, gameState, "Hit or stand.", 0)
+		fireCardBattle(player, gameState, "Hit or stand.", 0)
 		pushState(player)
 	end
 end
 
-local function hitBlackjack(player: Player)
-	local gameState = blackjackByPlayer[player]
+local function hitCardBattles(player: Player)
+	local gameState = CardBattlesByPlayer[player]
 	if not gameState or gameState.Ended then
 		return
 	end
@@ -2343,14 +2343,14 @@ local function hitBlackjack(player: Player)
 	table.insert(gameState.PlayerCards, drawWeightedCard(player, gameState.PlayerCards, true))
 	local total = handTotal(gameState.PlayerCards)
 	if total > 21 then
-		finishBlackjack(player, gameState, "Bust.", 0)
+		finishCardBattles(player, gameState, "Bust.", 0)
 	else
-		fireBlackjackState(player, gameState, "Hit or stand.", 0)
+		fireCardBattle(player, gameState, "Hit or stand.", 0)
 	end
 end
 
-local function standBlackjack(player: Player)
-	local gameState = blackjackByPlayer[player]
+local function standCardBattles(player: Player)
+	local gameState = CardBattlesByPlayer[player]
 	if not gameState or gameState.Ended then
 		return
 	end
@@ -2359,25 +2359,25 @@ local function standBlackjack(player: Player)
 		table.insert(gameState.DealerCards, drawWeightedCard(player, gameState.DealerCards, false))
 	end
 
-	local gamble = GameConfig.Gambles.Blackjack
+	local gamble = GameConfig.Gambles.CardBattles
 	local playerTotal = handTotal(gameState.PlayerCards)
 	local dealerTotal = handTotal(gameState.DealerCards)
 	if dealerTotal > 21 or playerTotal > dealerTotal then
-		finishBlackjack(player, gameState, "You win.", gamble.WinPayout)
+		finishCardBattles(player, gameState, "You win.", gamble.WinPayout)
 	elseif playerTotal == dealerTotal then
-		finishBlackjack(player, gameState, "Push.", gamble.PushPayout)
+		finishCardBattles(player, gameState, "Push.", gamble.PushPayout)
 	else
-		finishBlackjack(player, gameState, "Worker wins.", 0)
+		finishCardBattles(player, gameState, "Worker wins.", 0)
 	end
 end
 
-local function playLootBox(player: Player, run: RunState)
-	local gamble = GameConfig.Gambles.LootBox
+local function playMysteryWheel(player: Player, run: RunState)
+	local gamble = GameConfig.Gambles.MysteryWheel
 	local rng = rngByPlayer[player] or Random.new()
 	spendGambleUse(run)
 	run.Cash -= gamble.Cost
 	scratchByPlayer[player] = nil
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 
 	local luck = run.LuckBonus or 0
 	local totalWeight = 0
@@ -2405,8 +2405,8 @@ local function playLootBox(player: Player, run: RunState)
 	run.Tickets = (run.Tickets or 0) + prizeTickets
 	sendMessage(player, `Mystery Wheel: {selected.Name}! +{prizeTickets} Tickets`)
 	gambleResultEvent:FireClient(player, {
-		Event = "LootBox",
-		GambleName = "LootBox",
+		Event = "MysteryWheel",
+		GambleName = "MysteryWheel",
 		DisplayName = gamble.DisplayName,
 		Rarity = selected.Name,
 		Cash = prizeTickets,
@@ -2418,8 +2418,8 @@ local function playLootBox(player: Player, run: RunState)
 	pushState(player)
 end
 
-local function playRoulette(player: Player, run: RunState, bet)
-	local gamble = GameConfig.Gambles.Roulette
+local function playGuessingGame(player: Player, run: RunState, bet)
+	local gamble = GameConfig.Gambles.GuessingGame
 	if type(bet) ~= "table" then
 		sendMessage(player, "Choose a guess first.")
 		return
@@ -2427,18 +2427,18 @@ local function playRoulette(player: Player, run: RunState, bet)
 	spendGambleUse(run)
 	run.Cash -= gamble.Cost
 	scratchByPlayer[player] = nil
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 
 	local betType = tostring(bet.Type or "")
 	local betValue = bet.Value
-	local slots = rouletteSlots()
+	local slots = guessingGameSlots()
 
 	local rng = rngByPlayer[player] or Random.new()
 	local luck = run.LuckBonus or 0
 	local eligibleList = {}
 	local otherList = {}
 	for _, value in ipairs(slots) do
-		if rouletteBetWins(value, betType, betValue) then
+		if guessingGameBetWins(value, betType, betValue) then
 			table.insert(eligibleList, value)
 		else
 			table.insert(otherList, value)
@@ -2458,7 +2458,7 @@ local function playRoulette(player: Player, run: RunState, bet)
 		result = otherList[rng:NextInteger(1, #otherList)]
 	end
 
-	local won = rouletteBetWins(result, betType, betValue)
+	local won = guessingGameBetWins(result, betType, betValue)
 	local payout = 0
 	if won then
 		if betType == "Number" then
@@ -2471,11 +2471,11 @@ local function playRoulette(player: Player, run: RunState, bet)
 		run.Tickets = (run.Tickets or 0) + payout
 	end
 	local resultText = tostring(result)
-	local resultColor = rouletteColor(result)
+	local resultColor = guessingGameColor(result)
 	sendMessage(player, `Guessing Game result: {resultText} {resultColor}. {if won then "Win" else "Loss"} +{payout} Tickets`)
 	gambleResultEvent:FireClient(player, {
-		Event = "RouletteResult",
-		GambleName = "Roulette",
+		Event = "GuessingGameResult",
+		GambleName = "GuessingGame",
 		DisplayName = gamble.DisplayName,
 		Result = resultText,
 		ResultColor = resultColor,
@@ -2522,17 +2522,17 @@ local function playGamble(player: Player, gambleName: string)
 		return
 	end
 
-	if gambleName == "ScratchOff" then
-		startScratchOff(player, run)
+	if gambleName == "WhackAMole" then
+		startWhackAMole(player, run)
 		return
-	elseif gambleName == "Blackjack" then
-		startBlackjack(player, run)
+	elseif gambleName == "CardBattles" then
+		startCardBattles(player, run)
 		return
-	elseif gambleName == "LootBox" then
-		playLootBox(player, run)
+	elseif gambleName == "MysteryWheel" then
+		playMysteryWheel(player, run)
 		return
-	elseif gambleName == "Roulette" then
-		playRoulette(player, run, nil)
+	elseif gambleName == "GuessingGame" then
+		playGuessingGame(player, run, nil)
 		return
 	end
 
@@ -3046,7 +3046,7 @@ end
 local function startNewRun(player: Player)
 	setPlayerBattleFrozen(player, false)
 	scratchByPlayer[player] = nil
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 	clearCombatRoom(player)
 	ensureRun(player)
 	giveRunGun(player)
@@ -3071,7 +3071,7 @@ local function pauseRun(player: Player)
 	clearCombatRoom(player)
 	removeRunGun(player)
 	scratchByPlayer[player] = nil
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 	buildRoom(player)
 	sendMessage(player, "Run paused. Resume when you are ready.")
 	pushState(player)
@@ -3105,7 +3105,7 @@ local function quitRun(player: Player)
 
 	runsByPlayer[player] = nil
 	scratchByPlayer[player] = nil
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 	setPlayerBattleFrozen(player, false)
 	removeRunGun(player)
 	buildRoom(player)
@@ -3213,17 +3213,17 @@ handleAction = function(player: Player, action: string, payload: any?)
 		shootRunGun(player, payload)
 	elseif action == "Gamble" then
 		playGamble(player, payload)
-	elseif action == "RouletteBet" then
-		local canUse, run = canStartGamble(player, "Roulette")
+	elseif action == "GuessingGameBet" then
+		local canUse, run = canStartGamble(player, "GuessingGame")
 		if canUse and run then
-			playRoulette(player, run, payload)
+			playGuessingGame(player, run, payload)
 		end
 	elseif action == "ScratchReveal" or action == "WhackMoleHit" then
 		revealScratch(player, payload)
-	elseif action == "BlackjackHit" then
-		hitBlackjack(player)
-	elseif action == "BlackjackStand" then
-		standBlackjack(player)
+	elseif action == "CardBattlesHit" then
+		hitCardBattles(player)
+	elseif action == "CardBattlesStand" then
+		standCardBattles(player)
 	elseif action == "BuyItem" then
 		buyShopItem(player, payload)
 	elseif action == "BuyUpgrade" then
@@ -3271,7 +3271,7 @@ Players.PlayerRemoving:Connect(function(player)
 	runsByPlayer[player] = nil
 	rngByPlayer[player] = nil
 	scratchByPlayer[player] = nil
-	blackjackByPlayer[player] = nil
+	CardBattlesByPlayer[player] = nil
 end)
 
 createToolTemplate()

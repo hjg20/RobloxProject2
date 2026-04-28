@@ -42,19 +42,19 @@ GameConfig.MetaUpgrades = {
 }
 
 GameConfig.GameUnlocks = {
-	Blackjack = {
+	CardBattles = {
 		DisplayName = "Card Battle",
 		Cost = 5,
 		RequiredWins = 0,
 		Description = "Unlock the Card Battle arcade machine.",
 	},
-	Roulette = {
+	GuessingGame = {
 		DisplayName = "Guessing Game",
 		Cost = 20,
 		RequiredWins = 3,
 		Description = "Unlock the Guessing Game arcade machine.",
 	},
-	LootBox = {
+	MysteryWheel = {
 		DisplayName = "Mystery Wheel",
 		Cost = 50,
 		RequiredWins = 5,
@@ -95,7 +95,7 @@ GameConfig.GuiImages = {
 }
 
 GameConfig.Gambles = {
-	ScratchOff = {
+	WhackAMole = {
 		DisplayName = "Whack-a-Mole",
 		Cost = 5,
 		Description = "Whack real moles for points. Fake moles and blank slots cost points.",
@@ -107,15 +107,15 @@ GameConfig.Gambles = {
 		FakePenalty = 4,
 		FakeChance = 0.45,
 	},
-	Blackjack = {
+	CardBattles = {
 		DisplayName = "Card Battle",
 		Cost = 12,
 		Description = "Battle an arcade worker to get closest to 21.",
 		WinPayout = 24,
-		BlackjackPayout = 36,
+		CardBattlesPayout = 36,
 		PushPayout = 12,
 	},
-	LootBox = {
+	MysteryWheel = {
 		DisplayName = "Mystery Wheel",
 		Cost = 18,
 		Description = "Spin the wheel for a random ticket prize.",
@@ -127,7 +127,7 @@ GameConfig.Gambles = {
 			{ Name = "Mega Arcade Rush", Weight = 1, Tickets = 1000, Cash = 1000, Color = { 238, 68, 212 } },
 		},
 	},
-	Roulette = {
+	GuessingGame = {
 		DisplayName = "Guessing Game",
 		Cost = 10,
 		Description = "Guess the result: color, odd/even, or exact number.",

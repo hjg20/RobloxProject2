@@ -29,12 +29,12 @@ local setShopOpen: (boolean) -> () = function() end
 local setMapOpen: (boolean) -> () = function() end
 local setConfirmRunOpen: (boolean) -> () = function() end
 local render: () -> () = function() end
-local showRouletteChoices: () -> () = function() end
+local showGuessingGameChoices: () -> () = function() end
 local clearStage: () -> () = function() end
-local showScratchStart: (any) -> () = function() end
-local showBlackjackStart: () -> () = function() end
-local showBlackjackState: (any) -> () = function() end
-local showLootBoxStart: () -> () = function() end
+local showwhackAMoleStart: (any) -> () = function() end
+local showCardBattlesStart: () -> () = function() end
+local showCardBattle: (any) -> () = function() end
+local showMysteryWheelStart: () -> () = function() end
 local makeStageLabel: (string, UDim2, UDim2, Color3) -> TextLabel = function()
 	return Instance.new("TextLabel")
 end
@@ -42,16 +42,16 @@ local makeStageButton: (string, UDim2, () -> ()) -> TextButton = function()
 	return Instance.new("TextButton")
 end
 local scratchTiles: { [number]: TextButton } = {}
-local blackjackButtons: { TextButton } = {}
+local CardBattlesButtons: { TextButton } = {}
 local activeMiniGame: string? = nil
 local boundGunTools: { [Instance]: boolean } = {}
 local RUSTIC_FONT = Enum.Font.Arcade
 
 local orderNames = {
-	Gambles = { "ScratchOff", "Blackjack", "Roulette", "LootBox" },
+	Gambles = { "WhackAMole", "CardBattles", "GuessingGame", "MysteryWheel" },
 	ShopItems = { "Sword", "CashMagnet", "Medkit", "Armor", "CoinCharm" },
 	MetaUpgrades = { "Bankroll", "Vitality", "Edge", "Luck" },
-	GameUnlocks = { "Blackjack", "Roulette", "LootBox" },
+	GameUnlocks = { "CardBattles", "GuessingGame", "MysteryWheel" },
 }
 
 local function bindRunPistol(tool: Instance)
@@ -653,10 +653,10 @@ local function makeCasinoBackdrop(name: string, iconName: string)
 	image.Parent = casinoModal
 
 	local aliases = {
-		Scratchoff = { "WhackAMole", "Scratchoff", "ScratchOff" },
-		Blackjack = { "CardBattle", "Blackjack", "BlackJack" },
-		Roulette = { "GuessingGame", "Roulette" },
-		LootBox = { "MysteryWheel", "Lootboxes", "LootBox" },
+		WhackAMole = { "WhackAMole", "WhackAMole", "WhackAMole" },
+		CardBattles = { "CardBattle", "CardBattles", "CardBattles" },
+		GuessingGame = { "GuessingGame", "GuessingGame" },
+		MysteryWheel = { "MysteryWheel", "MysteryWheeles", "MysteryWheel" },
 	}
 	local asset = resolveGuiIconImage(iconName)
 	if not asset or asset == "" then
@@ -673,10 +673,10 @@ local function makeCasinoBackdrop(name: string, iconName: string)
 	casinoBackdropImages[name] = image
 end
 
-makeCasinoBackdrop("Scratchoff", "WhackAMole")
-makeCasinoBackdrop("Blackjack", "CardBattle")
-makeCasinoBackdrop("Roulette", "GuessingGame")
-makeCasinoBackdrop("LootBox", "MysteryWheel")
+makeCasinoBackdrop("WhackAMole", "WhackAMole")
+makeCasinoBackdrop("CardBattles", "CardBattle")
+makeCasinoBackdrop("GuessingGame", "GuessingGame")
+makeCasinoBackdrop("MysteryWheel", "MysteryWheel")
 
 local modalTitle = Instance.new("TextLabel")
 modalTitle.BackgroundTransparency = 1
@@ -738,7 +738,7 @@ local function setCasinoBackdrop(name: string?, scratchLayout: boolean?)
 	resultText.TextXAlignment = Enum.TextXAlignment.Center
 	casinoOverlay.BackgroundTransparency = if scratchBackdropOpen then 1 else casinoOverlay.BackgroundTransparency
 	if casinoOpen then
-		local targetSize = if scratchBackdropOpen then UDim2.fromOffset(520, 390) elseif name == "Roulette" then UDim2.fromOffset(560, 460) else UDim2.fromOffset(440, 430)
+		local targetSize = if scratchBackdropOpen then UDim2.fromOffset(520, 390) elseif name == "GuessingGame" then UDim2.fromOffset(560, 460) else UDim2.fromOffset(440, 430)
 		local targetOverlayTransparency = if scratchBackdropOpen then 1 else 0.28
 		tween(casinoOverlay, 0.12, { BackgroundTransparency = targetOverlayTransparency })
 		tween(casinoModal, 0.18, { Size = targetSize })
@@ -746,7 +746,7 @@ local function setCasinoBackdrop(name: string?, scratchLayout: boolean?)
 end
 
 local function setScratchBackdrop(open: boolean)
-	setCasinoBackdrop(if open then "Scratchoff" else nil, open)
+	setCasinoBackdrop(if open then "WhackAMole" else nil, open)
 end
 
 local gambleGrid = Instance.new("Frame")
@@ -973,7 +973,7 @@ local function getMetaCost(upgradeConfig, level: number): number
 end
 
 local function isGambleUnlocked(state, gambleName: string): boolean
-	if gambleName == "ScratchOff" then
+	if gambleName == "WhackAMole" then
 		return true
 	end
 	local meta = state and state.Meta
@@ -1003,20 +1003,20 @@ local function openPhysicalCasinoGame(gambleName: string)
 	end
 	casinoOpen = true
 	setCasinoOpen(true)
-	if gambleName == "ScratchOff" then
-		showScratchStart({
+	if gambleName == "WhackAMole" then
+		showwhackAMoleStart({
 			Buying = true,
 			Slots = 10,
-			Rounds = (currentState.Config.Gambles.ScratchOff and currentState.Config.Gambles.ScratchOff.Rounds) or 12,
-			Cost = getGambleCost("ScratchOff"),
-			HitPoints = (currentState.Config.Gambles.ScratchOff and currentState.Config.Gambles.ScratchOff.HitPoints) or 5,
+			Rounds = (currentState.Config.Gambles.WhackAMole and currentState.Config.Gambles.WhackAMole.Rounds) or 12,
+			Cost = getGambleCost("WhackAMole"),
+			HitPoints = (currentState.Config.Gambles.WhackAMole and currentState.Config.Gambles.WhackAMole.HitPoints) or 5,
 		})
-	elseif gambleName == "Blackjack" then
-		showBlackjackStart()
-	elseif gambleName == "Roulette" then
-		showRouletteChoices()
-	elseif gambleName == "LootBox" then
-		showLootBoxStart()
+	elseif gambleName == "CardBattles" then
+		showCardBattlesStart()
+	elseif gambleName == "GuessingGame" then
+		showGuessingGameChoices()
+	elseif gambleName == "MysteryWheel" then
+		showMysteryWheelStart()
 	else
 		actionEvent:FireServer("Gamble", gambleName)
 	end
@@ -1024,7 +1024,7 @@ end
 
 setCasinoOpen = function(open: boolean)
 	casinoOverlay.Visible = true
-	local targetSize = if open then (if scratchBackdropOpen then UDim2.fromOffset(520, 390) elseif casinoBackdropName == "Roulette" then UDim2.fromOffset(560, 460) else UDim2.fromOffset(440, 430)) else UDim2.fromOffset(0, 0)
+	local targetSize = if open then (if scratchBackdropOpen then UDim2.fromOffset(520, 390) elseif casinoBackdropName == "GuessingGame" then UDim2.fromOffset(560, 460) else UDim2.fromOffset(440, 430)) else UDim2.fromOffset(0, 0)
 	local targetTransparency = if open then (if scratchBackdropOpen then 1 else 0.28) else 1
 	tween(casinoOverlay, 0.15, { BackgroundTransparency = targetTransparency })
 	local modalTween = tween(casinoModal, 0.2, { Size = targetSize })
@@ -1146,15 +1146,15 @@ local ROULETTE_RED: { [number]: boolean } = {
 	[36] = true,
 }
 
-local function rouletteColorName(value): string
+local function guessingGameColorName(value): string
 	if value == "0" or value == "00" then
 		return "Green"
 	end
 	return if ROULETTE_RED[tonumber(value) or 0] then "Red" else "Black"
 end
 
-local function rouletteColor3(value): Color3
-	local color = rouletteColorName(value)
+local function guessingGameColor3(value): Color3
+	local color = guessingGameColorName(value)
 	if color == "Green" then
 		return Color3.fromRGB(38, 132, 78)
 	elseif color == "Red" then
@@ -1163,18 +1163,18 @@ local function rouletteColor3(value): Color3
 	return Color3.fromRGB(22, 24, 29)
 end
 
-showScratchStart = function(data)
-	activeMiniGame = "ScratchOff"
+showwhackAMoleStart = function(data)
+	activeMiniGame = "WhackAMole"
 	animatingGamble = false
-	setCasinoBackdrop("Scratchoff", false)
+	setCasinoBackdrop("WhackAMole", false)
 	clearStage()
 	scratchTiles = {}
-	local costText = gambleCostText("ScratchOff", data.Cost)
+	local costText = gambleCostText("WhackAMole", data.Cost)
 	if data.Buying then
 		resultText.Position = UDim2.fromOffset(12, 132)
 		resultText.Text = `Whack-a-Mole costs {costText}. Earn Tickets from your score.`
 		local buyButton = makeStageButton(`Play Whack-a-Mole ({costText})`, UDim2.fromOffset(108, 76), function()
-			actionEvent:FireServer("Gamble", "ScratchOff")
+			actionEvent:FireServer("Gamble", "WhackAMole")
 		end)
 		buyButton.Size = UDim2.fromOffset(224, 46)
 		return
@@ -1207,7 +1207,7 @@ showScratchStart = function(data)
 	end
 end
 
-local function showScratchReveal(data)
+local function whackAMole(data)
 	if data.Event == "WhackMolePop" then
 		for index, button in pairs(scratchTiles) do
 			button:SetAttribute("Round", data.Round)
@@ -1238,11 +1238,11 @@ local function showScratchReveal(data)
 			button.Text = ""
 			button.BackgroundColor3 = Color3.fromRGB(42, 48, 62)
 		end
-		resultText.Position = UDim2.fromOffset(12, 100)
+		resultText.Position = UDim2.fromOffset(12, 225)
 		resultText.Text = `Done: {data.Score} points for {data.Tickets} Tickets`
-		local costText = gambleCostText("ScratchOff", data.Cost)
+		local costText = gambleCostText("WhackAMole", data.Cost)
 		local replay = makeStageButton(`Play Again ({costText})`, UDim2.fromOffset(122, 136), function()
-			actionEvent:FireServer("Gamble", "ScratchOff")
+			actionEvent:FireServer("Gamble", "WhackAMole")
 		end)
 		replay.Size = UDim2.fromOffset(196, 38)
 		return
@@ -1290,42 +1290,42 @@ makeStageButton = function(text: string, position: UDim2, callback: () -> ())
 	return button
 end
 
-showBlackjackStart = function()
-	activeMiniGame = "Blackjack"
+showCardBattlesStart = function()
+	activeMiniGame = "CardBattles"
 	animatingGamble = false
-	setCasinoBackdrop("Blackjack", false)
+	setCasinoBackdrop("CardBattles", false)
 	clearStage()
 	resultStage.Size = UDim2.new(1, -40, 0, 270)
 	resultText.Position = UDim2.fromOffset(12, 218)
 	resultText.Size = UDim2.new(1, -24, 0, 42)
-	for _, button in ipairs(blackjackButtons) do
+	for _, button in ipairs(CardBattlesButtons) do
 		button:Destroy()
 	end
-	blackjackButtons = {}
+	CardBattlesButtons = {}
 
-	local costText = gambleCostText("Blackjack", nil)
+	local costText = gambleCostText("CardBattles", nil)
 	resultText.Text = `Card Battle costs {costText}.`
 	makeStageLabel("CARD BATTLE", UDim2.fromOffset(98, 24), UDim2.fromOffset(220, 42), Color3.fromRGB(54, 63, 82))
 	local playButton = makeStageButton(`Play Card Battle ({costText})`, UDim2.fromOffset(105, 84), function()
 		resultText.Text = "Dealing cards..."
-		actionEvent:FireServer("Gamble", "Blackjack")
+		actionEvent:FireServer("Gamble", "CardBattles")
 	end)
 	playButton.Size = UDim2.fromOffset(205, 42)
-	blackjackButtons = { playButton }
+	CardBattlesButtons = { playButton }
 end
 
-showBlackjackState = function(data)
-	activeMiniGame = if data.Ended then nil else "Blackjack"
+showCardBattle = function(data)
+	activeMiniGame = if data.Ended then nil else "CardBattles"
 	animatingGamble = false
-	setCasinoBackdrop("Blackjack", false)
+	setCasinoBackdrop("CardBattles", false)
 	clearStage()
 	resultStage.Size = UDim2.new(1, -40, 0, 270)
 	resultText.Position = UDim2.fromOffset(12, 218)
 	resultText.Size = UDim2.new(1, -24, 0, 42)
-	for _, button in ipairs(blackjackButtons) do
+	for _, button in ipairs(CardBattlesButtons) do
 		button:Destroy()
 	end
-	blackjackButtons = {}
+	CardBattlesButtons = {}
 
 	makeStageLabel("YOU", UDim2.fromOffset(20, 10), UDim2.fromOffset(70, 24), Color3.fromRGB(54, 63, 82))
 	drawCardRow(data.PlayerCards, 40, false)
@@ -1336,44 +1336,44 @@ showBlackjackState = function(data)
 	resultText.Text = `{data.Status}   You: {data.PlayerTotal}{dealerTotal}`
 	if not data.Ended then
 		local hit = makeStageButton("Hit", UDim2.fromOffset(286, 54), function()
-			actionEvent:FireServer("BlackjackHit")
+			actionEvent:FireServer("CardBattlesHit")
 		end)
 		local stand = makeStageButton("Stand", UDim2.fromOffset(286, 104), function()
-			actionEvent:FireServer("BlackjackStand")
+			actionEvent:FireServer("CardBattlesStand")
 		end)
-		blackjackButtons = { hit, stand }
+		CardBattlesButtons = { hit, stand }
 	else
-		local costText = gambleCostText("Blackjack", data.Cost)
+		local costText = gambleCostText("CardBattles", data.Cost)
 		local replay = makeStageButton(`Play Again ({costText})`, UDim2.fromOffset(254, 104), function()
 			resultText.Text = "Dealing cards..."
-			actionEvent:FireServer("Gamble", "Blackjack")
+			actionEvent:FireServer("Gamble", "CardBattles")
 		end)
 		replay.Size = UDim2.fromOffset(140, 38)
-		blackjackButtons = { replay }
+		CardBattlesButtons = { replay }
 	end
 end
 
-showLootBoxStart = function()
-	activeMiniGame = "LootBox"
+showMysteryWheelStart = function()
+	activeMiniGame = "MysteryWheel"
 	animatingGamble = false
-	setCasinoBackdrop("LootBox", false)
+	setCasinoBackdrop("MysteryWheel", false)
 	clearStage()
 
-	local costText = gambleCostText("LootBox", nil)
+	local costText = gambleCostText("MysteryWheel", nil)
 	resultText.Text = `Mystery Wheel costs {costText}.`
 	local label = makeStageLabel("MYSTERY WHEEL", UDim2.fromOffset(76, 24), UDim2.fromOffset(260, 42), Color3.fromRGB(54, 63, 82))
-	label.BackgroundTransparency = if casinoBackdropImages.LootBox and casinoBackdropImages.LootBox.Image ~= "" then 0.25 else 0
+	label.BackgroundTransparency = if casinoBackdropImages.MysteryWheel and casinoBackdropImages.MysteryWheel.Image ~= "" then 0.25 else 0
 	local playButton = makeStageButton(`Spin Wheel ({costText})`, UDim2.fromOffset(105, 84), function()
 		resultText.Text = "Spinning wheel..."
-		actionEvent:FireServer("Gamble", "LootBox")
+		actionEvent:FireServer("Gamble", "MysteryWheel")
 	end)
 	playButton.Size = UDim2.fromOffset(205, 42)
 end
 
-local function animateLootBox(data)
+local function animateMysteryWheel(data)
 	activeMiniGame = nil
 	animatingGamble = true
-	setCasinoBackdrop("LootBox", false)
+	setCasinoBackdrop("MysteryWheel", false)
 	clearStage()
 	resultText.Text = "Spinning..."
 	local crate = makeStageLabel("SPIN", UDim2.fromOffset(132, 26), UDim2.fromOffset(150, 92), Color3.fromRGB(139, 84, 43))
@@ -1395,23 +1395,23 @@ local function animateLootBox(data)
 	})
 	resultText.Text = `{data.Rarity}! +{data.Tickets or data.Cash} Tickets`
 	animatingGamble = false
-	local costText = gambleCostText("LootBox", data.Cost)
+	local costText = gambleCostText("MysteryWheel", data.Cost)
 	local replay = makeStageButton(`Spin Again ({costText})`, UDim2.fromOffset(122, 124), function()
 		resultText.Text = "Spinning wheel..."
-		actionEvent:FireServer("Gamble", "LootBox")
+		actionEvent:FireServer("Gamble", "MysteryWheel")
 	end)
 	replay.Size = UDim2.fromOffset(170, 38)
 end
 
-showRouletteChoices = function()
-	activeMiniGame = "Roulette"
-	setCasinoBackdrop("Roulette", false)
+showGuessingGameChoices = function()
+	activeMiniGame = "GuessingGame"
+	setCasinoBackdrop("GuessingGame", false)
 	clearStage()
 	tween(casinoModal, 0.18, { Size = UDim2.fromOffset(560, 460) })
 	resultStage.Size = UDim2.new(1, -40, 0, 350)
 	resultText.Position = UDim2.fromOffset(18, 306)
 	resultText.Size = UDim2.new(1, -36, 0, 36)
-	local costText = gambleCostText("Roulette", nil)
+	local costText = gambleCostText("GuessingGame", nil)
 	resultText.Text = `Choose a guess. Play costs {costText}.`
 	local choices = {
 		{ Text = "Red", Bet = { Type = "Color", Value = "Red" } },
@@ -1424,12 +1424,12 @@ showRouletteChoices = function()
 		local y = 26 + (math.floor((i - 1) / 2) * 46)
 		local button = makeStageButton(choice.Text, UDim2.fromOffset(x, y), function()
 			activeMiniGame = nil
-			actionEvent:FireServer("RouletteBet", choice.Bet)
+			actionEvent:FireServer("GuessingGameBet", choice.Bet)
 		end)
 		if choice.Text == "Red" then
-			button.BackgroundColor3 = rouletteColor3(1)
+			button.BackgroundColor3 = guessingGameColor3(1)
 		elseif choice.Text == "Black" then
-			button.BackgroundColor3 = rouletteColor3(2)
+			button.BackgroundColor3 = guessingGameColor3(2)
 		end
 	end
 	local numbers = { "0", "00" }
@@ -1441,20 +1441,20 @@ showRouletteChoices = function()
 		local row = math.floor((index - 1) / 13)
 		local button = makeStageButton(numberText, UDim2.fromOffset(28 + (col * 38), 132 + (row * 34)), function()
 			activeMiniGame = nil
-			actionEvent:FireServer("RouletteBet", { Type = "Number", Value = numberText })
+			actionEvent:FireServer("GuessingGameBet", { Type = "Number", Value = numberText })
 		end)
 		button.Size = UDim2.fromOffset(32, 28)
 		button.TextSize = 13
-		button.BackgroundColor3 = rouletteColor3(numberText)
+		button.BackgroundColor3 = guessingGameColor3(numberText)
 	end
 end
 
-local function animateRouletteResult(data)
+local function animateGuessingGameResult(data)
 	activeMiniGame = nil
 	animatingGamble = true
-	setCasinoBackdrop("Roulette", false)
+	setCasinoBackdrop("GuessingGame", false)
 	clearStage()
-	local wheel = makeStageLabel("1", UDim2.fromOffset(132, 18), UDim2.fromOffset(150, 104), rouletteColor3(1))
+	local wheel = makeStageLabel("1", UDim2.fromOffset(132, 18), UDim2.fromOffset(150, 104), guessingGameColor3(1))
 	local spinValues = { "0", "00" }
 	for number = 1, 36 do
 		table.insert(spinValues, tostring(number))
@@ -1462,16 +1462,16 @@ local function animateRouletteResult(data)
 	for i = 1, 18 do
 		local value = spinValues[math.random(1, #spinValues)]
 		wheel.Text = value
-		wheel.BackgroundColor3 = rouletteColor3(value)
+		wheel.BackgroundColor3 = guessingGameColor3(value)
 		task.wait(0.045)
 	end
 	wheel.Text = tostring(data.Result)
-	wheel.BackgroundColor3 = rouletteColor3(data.Result)
-	resultText.Text = `{data.Result} {data.ResultColor or rouletteColorName(data.Result)} - {data.BetValue}: {if data.Won then "Win" else "Loss"} +{data.Tickets or data.Cash} Tickets`
+	wheel.BackgroundColor3 = guessingGameColor3(data.Result)
+	resultText.Text = `{data.Result} {data.ResultColor or guessingGameColorName(data.Result)} - {data.BetValue}: {if data.Won then "Win" else "Loss"} +{data.Tickets or data.Cash} Tickets`
 	animatingGamble = false
-	local costText = gambleCostText("Roulette", data.Cost)
+	local costText = gambleCostText("GuessingGame", data.Cost)
 	local replay = makeStageButton(`Play Again ({costText})`, UDim2.fromOffset(190, 160), function()
-		showRouletteChoices()
+		showGuessingGameChoices()
 	end)
 	replay.Size = UDim2.fromOffset(180, 38)
 end
@@ -1490,18 +1490,18 @@ end
 local function animateGambleResult(data)
 	casinoOpen = true
 	setCasinoOpen(true)
-	if data.Event == "ScratchStart" or data.Event == "WhackMoleStart" then
-		showScratchStart(data)
+	if data.Event == "whackAMoleStart" or data.Event == "WhackMoleStart" then
+		showwhackAMoleStart(data)
 	elseif data.Event == "ScratchReveal" or data.Event == "WhackMolePop" or data.Event == "WhackMoleHit" or data.Event == "WhackMoleEnd" then
-		showScratchReveal(data)
-	elseif data.Event == "BlackjackState" then
-		showBlackjackState(data)
-	elseif data.GambleName == "Blackjack" then
-		showBlackjackState(data)
-	elseif data.Event == "LootBox" or data.GambleName == "LootBox" then
-		animateLootBox(data)
-	elseif data.Event == "RouletteResult" or data.GambleName == "Roulette" then
-		animateRouletteResult(data)
+		whackAMole(data)
+	elseif data.Event == "CardBattle" then
+		showCardBattle(data)
+	elseif data.GambleName == "CardBattles" then
+		showCardBattle(data)
+	elseif data.Event == "MysteryWheel" or data.GambleName == "MysteryWheel" then
+		animateMysteryWheel(data)
+	elseif data.Event == "GuessingGameResult" or data.GambleName == "GuessingGame" then
+		animateGuessingGameResult(data)
 	else
 		animatingGamble = true
 		setScratchBackdrop(false)
@@ -1529,10 +1529,10 @@ local function rebuildStaticButtons(state)
 					return
 				end
 				if not animatingGamble and not activeMiniGame then
-					if gambleName == "Roulette" then
-						showRouletteChoices()
-					elseif gambleName == "LootBox" then
-						showLootBoxStart()
+					if gambleName == "GuessingGame" then
+						showGuessingGameChoices()
+					elseif gambleName == "MysteryWheel" then
+						showMysteryWheelStart()
 					else
 						actionEvent:FireServer("Gamble", gambleName)
 					end
