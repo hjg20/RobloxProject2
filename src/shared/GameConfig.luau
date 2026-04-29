@@ -83,6 +83,7 @@ GameConfig.GuiImages = {
 	ArcadeRush = "rbxassetid://100069856506384",
 	Map = "rbxassetid://124742725015739",
 	Shop = "rbxassetid://86048304002227",
+	ItemLibrary = "rbxassetid://122971181450283",
 	Start = "rbxassetid://108056925526072",
 	Restart = "rbxassetid://106730712404682",
 	Pause = "rbxassetid://115733781486000",
@@ -92,6 +93,85 @@ GameConfig.GuiImages = {
 	CardBattle = "rbxassetid://90958297469438",
 	GuessingGame = "rbxassetid://104322050610028",
 	MysteryWheel = "rbxassetid://92167325033232",
+}
+
+GameConfig.Items = {
+	["Lighter Bones"] = {
+		Name = "Lighter Bones",
+		Rarity = "Common",
+		Tooltip = "We drilled holes in your bones while you slept... on the bright side you're 50% faster now!",
+		UnlockText = "Always unlocked.",
+		Sprite = "rbxassetid://88964560200651",
+		AlwaysUnlocked = true,
+	},
+	["Gold-Stitched Pockets"] = {
+		Name = "Gold-Stitched Pockets",
+		Rarity = "Common",
+		Tooltip = "25% more tokens! Thanks evil alien dudes!",
+		UnlockText = "Always unlocked.",
+		Sprite = "rbxassetid://99328738664890",
+		AlwaysUnlocked = true,
+	},
+	["Mom's Credit Card"] = {
+		Name = "Mom's Credit Card",
+		Rarity = "Uncommon",
+		Tooltip = "Makes all arcade games free for 30 seconds! Thanks mom!",
+		UnlockText = "Play a single arcade game 10 times in one room.",
+		Sprite = "rbxassetid://137704741349569",
+		Active = true,
+		ChargeType = "Room",
+		UnlockCondition = "MaxRoomGamePlays",
+		UnlockThreshold = 10,
+	},
+	["Pocket Watch"] = {
+		Name = "Pocket Watch",
+		Rarity = "Uncommon",
+		Tooltip = "Slows down time-based games by 25%. Boring!",
+		UnlockText = "Get a perfect score in Whack-a-Mole.",
+		Sprite = "rbxassetid://111410935969293",
+		UnlockCondition = "ItemProgress",
+		UnlockKey = "WhackAMolePerfect",
+		UnlockThreshold = 1,
+	},
+	["Token on a String"] = {
+		Name = "Token on a String",
+		Rarity = "Uncommon",
+		Tooltip = "10% chance for a machine to not take tokens. What, are you broke?",
+		UnlockText = "Spend 1,000 tokens.",
+		Sprite = "rbxassetid://136434279495520",
+		UnlockCondition = "ItemProgress",
+		UnlockKey = "TokensSpent",
+		UnlockThreshold = 1000,
+	},
+	["Helium-Filled Sneakers"] = {
+		Name = "Helium-Filled Sneakers",
+		Rarity = "Rare",
+		Tooltip = "Do helium-filled shoes let you jump twice? Idk, but now they do!",
+		UnlockText = "Defeat the boss once.",
+		Sprite = "rbxassetid://87302634792921",
+		UnlockCondition = "Wins",
+		UnlockThreshold = 1,
+	},
+	["Counterfeit Ticket"] = {
+		Name = "Counterfeit Ticket",
+		Rarity = "Rare",
+		Tooltip = "Do you think the ticket guy will fall for it?",
+		UnlockText = "Hold 500 tickets at once.",
+		Sprite = "rbxassetid://117273716979559",
+		Active = true,
+		ChargeType = "Room",
+		UnlockCondition = "Tickets",
+		UnlockThreshold = 500,
+	},
+	["Four-Leaf Clover"] = {
+		Name = "Four-Leaf Clover",
+		Rarity = "Legendary",
+		Tooltip = "Feels lucky... like 100% increase to your luck stat lucky...",
+		UnlockText = "Beat a floor without getting hit.",
+		Sprite = "rbxassetid://107466951128649",
+		UnlockCondition = "UnlockKey",
+		UnlockKey = "NoHitFloor",
+	},
 }
 
 GameConfig.Gambles = {
@@ -109,11 +189,11 @@ GameConfig.Gambles = {
 	},
 	CardBattles = {
 		DisplayName = "Card Battle",
-		Cost = 12,
+		Cost = 10,
 		Description = "Battle an arcade worker to get closest to 21.",
-		WinPayout = 24,
-		CardBattlesPayout = 36,
-		PushPayout = 12,
+		WinPayout = 20,
+		CardBattlesPayout = 30,
+		PushPayout = 10,
 	},
 	MysteryWheel = {
 		DisplayName = "Mystery Wheel",
@@ -197,6 +277,48 @@ GameConfig.Enemies = {
 		Cash = 50,
 		Tokens = 5,
 	},
+}
+
+GameConfig.RouletteLookup = {
+	Red = {
+		[1] = true,
+		[3] = true,
+		[5] = true,
+		[7] = true,
+		[9] = true,
+		[12] = true,
+		[14] = true,
+		[16] = true,
+		[18] = true,
+		[19] = true,
+		[21] = true,
+		[23] = true,
+		[25] = true,
+		[27] = true,
+		[30] = true,
+		[32] = true,
+		[34] = true,
+		[36] = true,
+	},
+}
+
+GameConfig.Arena = {
+	BaseColumnsPerSide = 4,
+	BaseSpacingX = 170,
+	BaseRowZ = 165,
+	CombatFloorSize = 92,
+	CombatWallDistance = 58,
+	CombatFloorClearance = 118,
+	SlotRingSpacing = 145,
+	EnemySpawnEffectDuration = 0.15,
+}
+
+GameConfig.Gameplay = {
+	WhackAMolePopupDuration = 0.55,
+	CardBattleAnimationSpeed = 0.15,
+	MysteryWheelSpinDuration = 2.8,
+	ShootGunMaxRange = 150,
+	ProjectilePersistenceFrames = 80,
 }
 
 return GameConfig

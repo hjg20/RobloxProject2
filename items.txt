@@ -1,0 +1,9 @@
+Mom's Credit Card: Active item with 1 time use, makes all plays in a room free for 30 seconds. Tooltip: "Makes all arcade games free for 30 seconds! Thanks mom!" Type: Uncommon. Unlocked by playing a single arcade game 10 times in a room.
+Pocket Watch: Passive item that makes all time-sensitive games slow down by 25%. Tooltip: "Slows down time-based games by 25%. Boring!" Type: Uncommon. Unlocked by getting a perfect score on the WhackAMole game.
+Token on a String: Passive item that creates a 10% chance for a machine to not take tokens. Tooltip: "10% chance for a machine to not take tokens. What, are you broke?" Type: Uncommon. Unlocked by spending 1,000 tokens.
+Helium-Filled Sneakers: Passive item that lets the user double jump. Tooltip: "Do helium-filled shoes let you jump twice? Idk, but now they do!" Type: Rare. Unlocked by 
+Lighter Bones: Passive item that lets the user run 50% faster. Tooltip: "We drilled holes in your bones while you slept... on the bright side you're 50% faster now!" Type: Common. Always unlocked.
+Four-Leaf Clover: Passive item that increases the odds of winning on all luck-based arcade games by 100%. Tooltip: "Feels lucky... like 100% increase to your luck stat lucky..." Type: Legendary. Unlocked by defeating an entire floor without getting hit!
+Gold-Stitched Pockets: Passive item that increases the tokens dropped by enemies by 25%. Tooltip: "25% more tokens! Thanks evil alien dudes!" Type: Common. Always unlocked.
+Counterfeit Ticket: Active item that makes the next purchase from the ticket booth free, usable once per room. Tooltip: "Do you think the ticket guy will fall for it? I'll use it once per room just to be safe." Type: Rare. Unlocked by holding 500 tickets at once.
+

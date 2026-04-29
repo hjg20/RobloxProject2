@@ -3,6 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
 
+local GameConfig = require(ReplicatedStorage.Shared.GameConfig)
+
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 local remotes = ReplicatedStorage:WaitForChild("ArcadeRushRemotes")
@@ -14,8 +16,12 @@ local feedbackEvent = remotes:WaitForChild("Feedback") :: RemoteEvent
 local interactionEvent = remotes:WaitForChild("Interaction") :: RemoteEvent
 
 local currentState = nil
+local tutorialOpen = false
+local tutorialDismissedThisSession = false
+local tutorialPage = 1
 local casinoOpen = false
 local shopOpen = false
+local itemLibraryOpen = false
 local mapOpen = false
 local confirmRunOpen = false
 local tokenShopOpen = false
@@ -26,6 +32,7 @@ local pendingConfirmAction = "StartRun"
 local openRunConfirmation: (string, string, string, string) -> () = function() end
 local setCasinoOpen: (boolean) -> () = function() end
 local setShopOpen: (boolean) -> () = function() end
+local setItemLibraryOpen: (boolean) -> () = function() end
 local setMapOpen: (boolean) -> () = function() end
 local setConfirmRunOpen: (boolean) -> () = function() end
 local render: () -> () = function() end
@@ -45,7 +52,7 @@ local scratchTiles: { [number]: TextButton } = {}
 local CardBattlesButtons: { TextButton } = {}
 local activeMiniGame: string? = nil
 local boundGunTools: { [Instance]: boolean } = {}
-local RUSTIC_FONT = Enum.Font.Arcade
+local FONT = Enum.Font.Arcade
 
 local orderNames = {
 	Gambles = { "WhackAMole", "CardBattles", "GuessingGame", "MysteryWheel" },
@@ -104,7 +111,7 @@ countdownLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 countdownLabel.BackgroundTransparency = 1
 countdownLabel.Position = UDim2.fromScale(0.5, 0.48)
 countdownLabel.Size = UDim2.fromOffset(320, 180)
-countdownLabel.Font = RUSTIC_FONT
+countdownLabel.Font = FONT
 countdownLabel.TextColor3 = Color3.fromRGB(255, 246, 150)
 countdownLabel.TextStrokeColor3 = Color3.fromRGB(20, 18, 24)
 countdownLabel.TextStrokeTransparency = 0
@@ -157,7 +164,7 @@ title.Name = "Title"
 title.BackgroundTransparency = 1
 title.Position = UDim2.fromOffset(14, 10)
 title.Size = UDim2.new(1, -28, 0, 28)
-title.Font = RUSTIC_FONT
+title.Font = FONT
 title.Text = "ARCADE RUSH"
 title.TextColor3 = Color3.fromRGB(255, 230, 166)
 title.TextSize = 22
@@ -170,7 +177,7 @@ stats.Name = "Stats"
 stats.BackgroundTransparency = 1
 stats.Position = UDim2.fromOffset(0, 0)
 stats.Size = UDim2.new(1, 0, 1, 0)
-stats.Font = RUSTIC_FONT
+stats.Font = FONT
 stats.TextColor3 = Color3.fromRGB(255, 239, 184)
 stats.TextSize = 27
 stats.TextStrokeColor3 = Color3.fromRGB(18, 12, 10)
@@ -225,7 +232,7 @@ hitText.AnchorPoint = Vector2.new(0, 1)
 hitText.BackgroundTransparency = 1
 hitText.Position = UDim2.new(0, 26, 1, -108)
 hitText.Size = UDim2.fromOffset(220, 44)
-hitText.Font = RUSTIC_FONT
+hitText.Font = FONT
 hitText.TextColor3 = Color3.fromRGB(255, 76, 91)
 hitText.TextSize = 28
 hitText.TextStrokeColor3 = Color3.fromRGB(30, 10, 18)
@@ -234,6 +241,207 @@ hitText.TextTransparency = 1
 hitText.Visible = false
 hitText.ZIndex = 82
 hitText.Parent = root
+
+local tutorialOverlay = Instance.new("Frame")
+tutorialOverlay.Name = "TutorialOverlay"
+tutorialOverlay.BackgroundColor3 = Color3.fromRGB(3, 5, 10)
+tutorialOverlay.BackgroundTransparency = 0.22
+tutorialOverlay.BorderSizePixel = 0
+tutorialOverlay.Size = UDim2.fromScale(1, 1)
+tutorialOverlay.Visible = false
+tutorialOverlay.ZIndex = 90
+tutorialOverlay.Parent = root
+
+local tutorialModal = Instance.new("Frame")
+tutorialModal.Name = "TutorialModal"
+tutorialModal.AnchorPoint = Vector2.new(0.5, 0.5)
+tutorialModal.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
+tutorialModal.BorderSizePixel = 0
+tutorialModal.Position = UDim2.fromScale(0.5, 0.5)
+tutorialModal.Size = UDim2.fromOffset(560, 360)
+tutorialModal.ZIndex = 91
+tutorialModal.Parent = tutorialOverlay
+addCorner(tutorialModal, 10)
+
+local tutorialTitle = Instance.new("TextLabel")
+tutorialTitle.BackgroundTransparency = 1
+tutorialTitle.Position = UDim2.fromOffset(20, 18)
+tutorialTitle.Size = UDim2.new(1, -120, 0, 34)
+tutorialTitle.Font = FONT
+tutorialTitle.Text = "WELCOME TO ARCADE RUSH"
+tutorialTitle.TextColor3 = Color3.fromRGB(255, 230, 166)
+tutorialTitle.TextSize = 24
+tutorialTitle.TextXAlignment = Enum.TextXAlignment.Left
+tutorialTitle.ZIndex = 92
+tutorialTitle.Parent = tutorialModal
+
+local tutorialPageLabel = Instance.new("TextLabel")
+tutorialPageLabel.BackgroundTransparency = 1
+tutorialPageLabel.Position = UDim2.fromOffset(20, 58)
+tutorialPageLabel.Size = UDim2.new(1, -40, 0, 182)
+tutorialPageLabel.Font = FONT
+tutorialPageLabel.TextColor3 = Color3.fromRGB(246, 248, 252)
+tutorialPageLabel.TextSize = 22
+tutorialPageLabel.TextWrapped = true
+tutorialPageLabel.TextXAlignment = Enum.TextXAlignment.Left
+tutorialPageLabel.TextYAlignment = Enum.TextYAlignment.Top
+tutorialPageLabel.ZIndex = 92
+tutorialPageLabel.Parent = tutorialModal
+
+local tutorialCounter = Instance.new("TextLabel")
+tutorialCounter.BackgroundTransparency = 1
+tutorialCounter.Position = UDim2.fromOffset(20, 242)
+tutorialCounter.Size = UDim2.new(1, -40, 0, 24)
+tutorialCounter.Font = FONT
+tutorialCounter.TextColor3 = Color3.fromRGB(200, 203, 214)
+tutorialCounter.TextSize = 16
+tutorialCounter.TextXAlignment = Enum.TextXAlignment.Left
+tutorialCounter.ZIndex = 92
+tutorialCounter.Parent = tutorialModal
+
+local tutorialFooter = Instance.new("Frame")
+tutorialFooter.BackgroundTransparency = 1
+tutorialFooter.Position = UDim2.fromOffset(20, 276)
+tutorialFooter.Size = UDim2.new(1, -40, 0, 42)
+tutorialFooter.ZIndex = 92
+tutorialFooter.Parent = tutorialModal
+
+local tutorialDontShow = Instance.new("TextButton")
+tutorialDontShow.BackgroundColor3 = Color3.fromRGB(54, 63, 82)
+tutorialDontShow.BorderSizePixel = 0
+tutorialDontShow.Position = UDim2.fromOffset(0, 0)
+tutorialDontShow.Size = UDim2.fromOffset(214, 34)
+tutorialDontShow.Font = FONT
+tutorialDontShow.Text = ""
+tutorialDontShow.TextColor3 = Color3.fromRGB(246, 248, 252)
+tutorialDontShow.TextSize = 16
+tutorialDontShow.TextXAlignment = Enum.TextXAlignment.Left
+tutorialDontShow.ZIndex = 92
+tutorialDontShow.Parent = tutorialFooter
+addCorner(tutorialDontShow, 6)
+
+local tutorialDontShowMark = Instance.new("TextLabel")
+tutorialDontShowMark.BackgroundTransparency = 1
+tutorialDontShowMark.Position = UDim2.fromOffset(10, 0)
+tutorialDontShowMark.Size = UDim2.fromOffset(28, 34)
+tutorialDontShowMark.Font = FONT
+tutorialDontShowMark.Text = "[ ]"
+tutorialDontShowMark.TextColor3 = Color3.fromRGB(255, 230, 166)
+tutorialDontShowMark.TextSize = 18
+tutorialDontShowMark.TextXAlignment = Enum.TextXAlignment.Left
+tutorialDontShowMark.ZIndex = 93
+tutorialDontShowMark.Parent = tutorialDontShow
+
+local tutorialDontShowText = Instance.new("TextLabel")
+tutorialDontShowText.BackgroundTransparency = 1
+tutorialDontShowText.Position = UDim2.fromOffset(44, 0)
+tutorialDontShowText.Size = UDim2.new(1, -50, 1, 0)
+tutorialDontShowText.Font = FONT
+tutorialDontShowText.Text = "Don't show again"
+tutorialDontShowText.TextColor3 = Color3.fromRGB(246, 248, 252)
+tutorialDontShowText.TextSize = 16
+tutorialDontShowText.TextXAlignment = Enum.TextXAlignment.Left
+tutorialDontShowText.ZIndex = 93
+tutorialDontShowText.Parent = tutorialDontShow
+
+local tutorialNav = Instance.new("Frame")
+tutorialNav.BackgroundTransparency = 1
+tutorialNav.AnchorPoint = Vector2.new(1, 0)
+tutorialNav.Position = UDim2.new(1, 0, 0, 0)
+tutorialNav.Size = UDim2.fromOffset(176, 34)
+tutorialNav.ZIndex = 92
+tutorialNav.Parent = tutorialFooter
+
+local tutorialPrev = Instance.new("TextButton")
+tutorialPrev.BackgroundColor3 = Color3.fromRGB(54, 63, 82)
+tutorialPrev.BorderSizePixel = 0
+tutorialPrev.Position = UDim2.fromOffset(0, 0)
+tutorialPrev.Size = UDim2.fromOffset(52, 34)
+tutorialPrev.Font = FONT
+tutorialPrev.Text = "<"
+tutorialPrev.TextColor3 = Color3.fromRGB(246, 248, 252)
+tutorialPrev.TextSize = 18
+tutorialPrev.ZIndex = 92
+tutorialPrev.Parent = tutorialNav
+addCorner(tutorialPrev, 6)
+
+local tutorialNext = Instance.new("TextButton")
+tutorialNext.BackgroundColor3 = Color3.fromRGB(54, 63, 82)
+tutorialNext.BorderSizePixel = 0
+tutorialNext.Position = UDim2.fromOffset(60, 0)
+tutorialNext.Size = UDim2.fromOffset(60, 34)
+tutorialNext.Font = FONT
+tutorialNext.Text = ">"
+tutorialNext.TextColor3 = Color3.fromRGB(246, 248, 252)
+tutorialNext.TextSize = 18
+tutorialNext.ZIndex = 92
+tutorialNext.Parent = tutorialNav
+addCorner(tutorialNext, 6)
+
+local tutorialClose = Instance.new("TextButton")
+tutorialClose.BackgroundColor3 = Color3.fromRGB(54, 63, 82)
+tutorialClose.BorderSizePixel = 0
+tutorialClose.Position = UDim2.fromOffset(128, 0)
+tutorialClose.Size = UDim2.fromOffset(48, 34)
+tutorialClose.Font = FONT
+tutorialClose.Text = "X"
+tutorialClose.TextColor3 = Color3.fromRGB(246, 248, 252)
+tutorialClose.TextSize = 18
+tutorialClose.ZIndex = 92
+tutorialClose.Parent = tutorialNav
+addCorner(tutorialClose, 6)
+
+local tutorialPages = {
+	"Tokens let you play the arcade machines.",
+	"Winning games gives Tickets, which buy upgrades.",
+	"Clear rooms, fight enemies, and beat the boss.",
+	"Come back stronger and unlock more machines.",
+}
+
+local tutorialRememberChoice = false
+local function refreshTutorialPage()
+	local total = #tutorialPages
+	tutorialPage = math.clamp(tutorialPage, 1, total)
+	tutorialPageLabel.Text = tutorialPages[tutorialPage]
+	tutorialCounter.Text = `Page {tutorialPage}/{total}`
+	tutorialPrev.Active = tutorialPage > 1
+	tutorialPrev.AutoButtonColor = tutorialPage > 1
+	tutorialPrev.TextTransparency = if tutorialPage > 1 then 0 else 0.45
+	tutorialNext.Text = if tutorialPage >= total then "Done" else ">"
+	tutorialDontShowMark.Text = if tutorialRememberChoice then "[x]" else "[ ]"
+end
+
+local function closeTutorial()
+	tutorialOpen = false
+	tutorialDismissedThisSession = true
+	tutorialOverlay.Visible = false
+	if tutorialRememberChoice then
+		actionEvent:FireServer("MarkTutorialSeen")
+	end
+end
+
+tutorialDontShow.Activated:Connect(function()
+	tutorialRememberChoice = not tutorialRememberChoice
+	refreshTutorialPage()
+end)
+
+tutorialClose.Activated:Connect(closeTutorial)
+tutorialPrev.Activated:Connect(function()
+	if tutorialPage > 1 then
+		tutorialPage -= 1
+		refreshTutorialPage()
+	end
+end)
+tutorialNext.Activated:Connect(function()
+	if tutorialPage < #tutorialPages then
+		tutorialPage += 1
+		refreshTutorialPage()
+	else
+		closeTutorial()
+	end
+end)
+
+refreshTutorialPage()
 
 local actionsPanel = Instance.new("Frame")
 actionsPanel.Name = "ActionsPanel"
@@ -284,7 +492,7 @@ local function makeHeader(parent: Instance, text: string, order: number)
 	label.BackgroundTransparency = 1
 	label.LayoutOrder = order
 	label.Size = UDim2.new(1, 0, 0, 24)
-	label.Font = RUSTIC_FONT
+	label.Font = FONT
 	label.Text = text
 	label.TextColor3 = Color3.fromRGB(255, 230, 166)
 	label.TextSize = 16
@@ -300,7 +508,7 @@ local function makeButton(parent: Instance, text: string, order: number, callbac
 	button.BorderSizePixel = 0
 	button.LayoutOrder = order
 	button.Size = UDim2.new(1, 0, 0, 38)
-	button.Font = RUSTIC_FONT
+	button.Font = FONT
 	button.Text = text
 	button.TextColor3 = Color3.fromRGB(246, 248, 252)
 	button.TextSize = 14
@@ -328,7 +536,7 @@ local function makeIconButton(parent: Instance, icon: string, order: number, cal
 	button.LayoutOrder = order
 	button.Size = UDim2.fromOffset(66, 66)
 	button:SetAttribute("IconButton", true)
-	button.Font = RUSTIC_FONT
+	button.Font = FONT
 	button.Text = icon
 	button.TextColor3 = Color3.fromRGB(255, 230, 166)
 	button.TextSize = 24
@@ -493,9 +701,17 @@ local shopButton = makeIconButton(actionIconBar, "$", 8, function()
 	render()
 end)
 applyGuiIconImage(shopButton, "Shop")
+local itemLibraryButton = makeIconButton(actionIconBar, "", 9, function()
+	itemLibraryOpen = not itemLibraryOpen
+	render()
+end)
+if not applyGuiIconImage(itemLibraryButton, "ItemLibrary") then
+	itemLibraryButton.Text = "?"
+end
 
 local shopButtons: { [string]: TextButton } = {}
 local mapButtons: { TextButton } = {}
+local itemButtons: { [string]: TextButton } = {}
 
 local tokenShopHeader = makeHeader(upgradesFrame, "Machine Shop", 60)
 local tokenShopCloseButton = makeButton(upgradesFrame, "Close", 64, function()
@@ -511,7 +727,7 @@ tooltip.BackgroundColor3 = Color3.fromRGB(12, 14, 19)
 tooltip.BackgroundTransparency = 0.04
 tooltip.BorderSizePixel = 0
 tooltip.Size = UDim2.fromOffset(310, 72)
-tooltip.Font = RUSTIC_FONT
+tooltip.Font = FONT
 tooltip.TextColor3 = Color3.fromRGB(255, 248, 221)
 tooltip.TextSize = 13
 tooltip.TextWrapped = true
@@ -557,6 +773,9 @@ end)
 setTooltip(shopButton, function()
 	return "Machine Shop\nSpend Cash on new arcade machines."
 end)
+setTooltip(itemLibraryButton, function()
+	return "Item Library\nBrowse unlocked and locked crane items."
+end)
 
 local function renderHearts(currentHealth: number, maxHealth: number)
 	local displayMax = math.max(0, math.floor(maxHealth))
@@ -571,7 +790,7 @@ local function renderHearts(currentHealth: number, maxHealth: number)
 			label.BackgroundTransparency = 1
 			label.LayoutOrder = index
 			label.Size = UDim2.fromOffset(40, 56)
-			label.Font = RUSTIC_FONT
+			label.Font = FONT
 			label.Text = "♥"
 			label.TextScaled = true
 			label.TextStrokeColor3 = Color3.fromRGB(41, 8, 18)
@@ -682,7 +901,7 @@ local modalTitle = Instance.new("TextLabel")
 modalTitle.BackgroundTransparency = 1
 modalTitle.Position = UDim2.fromOffset(20, 14)
 modalTitle.Size = UDim2.new(1, -80, 0, 34)
-modalTitle.Font = RUSTIC_FONT
+modalTitle.Font = FONT
 modalTitle.Text = ""
 modalTitle.TextColor3 = Color3.fromRGB(255, 230, 166)
 modalTitle.TextSize = 24
@@ -709,16 +928,17 @@ resultStage.Parent = casinoModal
 addCorner(resultStage, 8)
 
 local resultText = Instance.new("TextLabel")
+resultText.Text = ""
 resultText.BackgroundTransparency = 1
 resultText.Position = UDim2.fromOffset(12, 128)
 resultText.Size = UDim2.new(1, -24, 0, 38)
-resultText.Font = RUSTIC_FONT
-resultText.Text = "Choose a game."
+resultText.Font = FONT
 resultText.TextColor3 = Color3.fromRGB(255, 248, 221)
 resultText.TextSize = 20
 resultText.TextWrapped = true
 resultText.ZIndex = 2
 resultText.Parent = resultStage
+
 
 local function setCasinoBackdrop(name: string?, scratchLayout: boolean?)
 	casinoBackdropName = name
@@ -786,7 +1006,7 @@ local shopTitle = Instance.new("TextLabel")
 shopTitle.BackgroundTransparency = 1
 shopTitle.Position = UDim2.fromOffset(20, 14)
 shopTitle.Size = UDim2.new(1, -80, 0, 34)
-shopTitle.Font = RUSTIC_FONT
+shopTitle.Font = FONT
 shopTitle.Text = "TICKET BOOTH"
 shopTitle.TextColor3 = Color3.fromRGB(255, 230, 166)
 shopTitle.TextSize = 24
@@ -820,6 +1040,59 @@ machineShopOverlay.BackgroundTransparency = 1
 machineShopOverlay.Visible = false
 machineShopOverlay.Size = UDim2.fromScale(1, 1)
 machineShopOverlay.Parent = root
+
+local itemLibraryOverlay = Instance.new("Frame")
+itemLibraryOverlay.Name = "ItemLibraryOverlay"
+itemLibraryOverlay.BackgroundColor3 = Color3.fromRGB(3, 5, 10)
+itemLibraryOverlay.BackgroundTransparency = 1
+itemLibraryOverlay.Visible = false
+itemLibraryOverlay.Size = UDim2.fromScale(1, 1)
+itemLibraryOverlay.Parent = root
+
+local itemLibraryModal = Instance.new("Frame")
+itemLibraryModal.Name = "ItemLibraryModal"
+itemLibraryModal.AnchorPoint = Vector2.new(0.5, 0.5)
+itemLibraryModal.Position = UDim2.fromScale(0.5, 0.5)
+itemLibraryModal.Size = UDim2.fromOffset(760, 500)
+itemLibraryModal.BackgroundColor3 = Color3.fromRGB(20, 18, 26)
+itemLibraryModal.BorderSizePixel = 0
+itemLibraryModal.ClipsDescendants = true
+itemLibraryModal.Parent = itemLibraryOverlay
+addCorner(itemLibraryModal, 8)
+
+local itemLibraryTitle = Instance.new("TextLabel")
+itemLibraryTitle.BackgroundTransparency = 1
+itemLibraryTitle.Position = UDim2.fromOffset(20, 14)
+itemLibraryTitle.Size = UDim2.new(1, -80, 0, 34)
+itemLibraryTitle.Font = FONT
+itemLibraryTitle.Text = "ITEM LIBRARY"
+itemLibraryTitle.TextColor3 = Color3.fromRGB(255, 230, 166)
+itemLibraryTitle.TextSize = 24
+itemLibraryTitle.TextXAlignment = Enum.TextXAlignment.Left
+itemLibraryTitle.Parent = itemLibraryModal
+
+local closeItemLibraryButton = makeButton(itemLibraryModal, "X", 1, function()
+	itemLibraryOpen = false
+	setItemLibraryOpen(false)
+end)
+closeItemLibraryButton.Position = UDim2.new(1, -54, 0, 14)
+closeItemLibraryButton.Size = UDim2.fromOffset(34, 34)
+
+local itemLibraryScroll = Instance.new("ScrollingFrame")
+itemLibraryScroll.BackgroundTransparency = 1
+itemLibraryScroll.BorderSizePixel = 0
+itemLibraryScroll.Position = UDim2.fromOffset(20, 64)
+itemLibraryScroll.Size = UDim2.new(1, -40, 1, -84)
+itemLibraryScroll.CanvasSize = UDim2.fromOffset(0, 0)
+itemLibraryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+itemLibraryScroll.ScrollBarThickness = 8
+itemLibraryScroll.Parent = itemLibraryModal
+
+local itemLibraryLayout = Instance.new("UIGridLayout")
+itemLibraryLayout.CellPadding = UDim2.fromOffset(10, 10)
+itemLibraryLayout.CellSize = UDim2.fromOffset(170, 150)
+itemLibraryLayout.SortOrder = Enum.SortOrder.LayoutOrder
+itemLibraryLayout.Parent = itemLibraryScroll
 
 local machineShopModal = Instance.new("Frame")
 machineShopModal.Name = "MachineShopModal"
@@ -859,7 +1132,7 @@ local mapTitle = Instance.new("TextLabel")
 mapTitle.BackgroundTransparency = 1
 mapTitle.Position = UDim2.fromOffset(20, 14)
 mapTitle.Size = UDim2.new(1, -80, 0, 34)
-mapTitle.Font = RUSTIC_FONT
+mapTitle.Font = FONT
 mapTitle.Text = "MAP"
 mapTitle.TextColor3 = Color3.fromRGB(255, 230, 166)
 mapTitle.TextSize = 24
@@ -877,7 +1150,7 @@ local mapHint = Instance.new("TextLabel")
 mapHint.BackgroundTransparency = 1
 mapHint.Position = UDim2.fromOffset(20, 54)
 mapHint.Size = UDim2.new(1, -40, 0, 42)
-mapHint.Font = RUSTIC_FONT
+mapHint.Font = FONT
 mapHint.Text = "Follow the rooms in order. Click the next square to fight."
 mapHint.TextColor3 = Color3.fromRGB(232, 236, 244)
 mapHint.TextSize = 15
@@ -922,7 +1195,7 @@ local confirmTitle = Instance.new("TextLabel")
 confirmTitle.BackgroundTransparency = 1
 confirmTitle.Position = UDim2.fromOffset(20, 16)
 confirmTitle.Size = UDim2.new(1, -40, 0, 34)
-confirmTitle.Font = RUSTIC_FONT
+confirmTitle.Font = FONT
 confirmTitle.Text = "START NEW RUN?"
 confirmTitle.TextColor3 = Color3.fromRGB(255, 230, 166)
 confirmTitle.TextSize = 22
@@ -933,7 +1206,7 @@ local confirmText = Instance.new("TextLabel")
 confirmText.BackgroundTransparency = 1
 confirmText.Position = UDim2.fromOffset(20, 62)
 confirmText.Size = UDim2.new(1, -40, 0, 70)
-confirmText.Font = RUSTIC_FONT
+confirmText.Font = FONT
 confirmText.Text = "This starts fresh at your base with your unlocked arcade machines."
 confirmText.TextColor3 = Color3.fromRGB(232, 236, 244)
 confirmText.TextSize = 16
@@ -1067,6 +1340,21 @@ local function setMachineShopOpen(open: boolean)
 	end
 end
 
+setItemLibraryOpen = function(open: boolean)
+	itemLibraryOverlay.Visible = true
+	local targetSize = if open then UDim2.fromOffset(760, 500) else UDim2.fromOffset(0, 0)
+	local targetTransparency = if open then 0.28 else 1
+	tween(itemLibraryOverlay, 0.15, { BackgroundTransparency = targetTransparency })
+	local modalTween = tween(itemLibraryModal, 0.2, { Size = targetSize })
+	if not open then
+		modalTween.Completed:Connect(function()
+			if not itemLibraryOpen then
+				itemLibraryOverlay.Visible = false
+			end
+		end)
+	end
+end
+
 setMapOpen = function(open: boolean)
 	mapOverlay.Visible = true
 	local targetSize = if open then UDim2.fromOffset(500, 410) else UDim2.fromOffset(0, 0)
@@ -1111,7 +1399,7 @@ makeStageLabel = function(text: string, position: UDim2, size: UDim2, color: Col
 	label.BorderSizePixel = 0
 	label.Position = position
 	label.Size = size
-	label.Font = RUSTIC_FONT
+	label.Font = FONT
 	label.Text = text
 	label.TextColor3 = Color3.fromRGB(255, 255, 255)
 	label.TextScaled = true
@@ -1125,26 +1413,7 @@ local function colorFromTriplet(triplet)
 	return Color3.fromRGB(triplet[1], triplet[2], triplet[3])
 end
 
-local ROULETTE_RED: { [number]: boolean } = {
-	[1] = true,
-	[3] = true,
-	[5] = true,
-	[7] = true,
-	[9] = true,
-	[12] = true,
-	[14] = true,
-	[16] = true,
-	[18] = true,
-	[19] = true,
-	[21] = true,
-	[23] = true,
-	[25] = true,
-	[27] = true,
-	[30] = true,
-	[32] = true,
-	[34] = true,
-	[36] = true,
-}
+local ROULETTE_RED: { [number]: boolean } = GameConfig.RouletteLookup.Red
 
 local function guessingGameColorName(value): string
 	if value == "0" or value == "00" then
@@ -1169,6 +1438,7 @@ showwhackAMoleStart = function(data)
 	setCasinoBackdrop("WhackAMole", false)
 	clearStage()
 	scratchTiles = {}
+	resultText.Text = "Whack some Moles!"
 	local costText = gambleCostText("WhackAMole", data.Cost)
 	if data.Buying then
 		resultText.Position = UDim2.fromOffset(12, 132)
@@ -1190,7 +1460,7 @@ showwhackAMoleStart = function(data)
 		button.BorderSizePixel = 0
 		button.Position = UDim2.fromOffset(36 + (((i - 1) % 5) * 74), 20 + (math.floor((i - 1) / 5) * 62))
 		button.Size = UDim2.fromOffset(58, 48)
-		button.Font = RUSTIC_FONT
+		button.Font = FONT
 		button.Text = ""
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
 		button.TextSize = 15
@@ -1279,7 +1549,7 @@ makeStageButton = function(text: string, position: UDim2, callback: () -> ())
 	button.BorderSizePixel = 0
 	button.Position = position
 	button.Size = UDim2.fromOffset(96, 36)
-	button.Font = RUSTIC_FONT
+	button.Font = FONT
 	button.Text = text
 	button.TextColor3 = Color3.fromRGB(246, 248, 252)
 	button.TextSize = 14
@@ -1298,13 +1568,13 @@ showCardBattlesStart = function()
 	resultStage.Size = UDim2.new(1, -40, 0, 270)
 	resultText.Position = UDim2.fromOffset(12, 218)
 	resultText.Size = UDim2.new(1, -24, 0, 42)
+	resultText.Text = "Battle an arcade worker in a game of cards!"
 	for _, button in ipairs(CardBattlesButtons) do
 		button:Destroy()
 	end
 	CardBattlesButtons = {}
 
 	local costText = gambleCostText("CardBattles", nil)
-	resultText.Text = `Card Battle costs {costText}.`
 	makeStageLabel("CARD BATTLE", UDim2.fromOffset(98, 24), UDim2.fromOffset(220, 42), Color3.fromRGB(54, 63, 82))
 	local playButton = makeStageButton(`Play Card Battle ({costText})`, UDim2.fromOffset(105, 84), function()
 		resultText.Text = "Dealing cards..."
@@ -1359,8 +1629,11 @@ showMysteryWheelStart = function()
 	setCasinoBackdrop("MysteryWheel", false)
 	clearStage()
 
+	resultText.Text = "Spin the wheel to win Tickets."
+	resultText.Visible = true
+	resultText.TextColor3 = Color3.fromRGB(255, 248, 221)
+
 	local costText = gambleCostText("MysteryWheel", nil)
-	resultText.Text = `Mystery Wheel costs {costText}.`
 	local label = makeStageLabel("MYSTERY WHEEL", UDim2.fromOffset(76, 24), UDim2.fromOffset(260, 42), Color3.fromRGB(54, 63, 82))
 	label.BackgroundTransparency = if casinoBackdropImages.MysteryWheel and casinoBackdropImages.MysteryWheel.Image ~= "" then 0.25 else 0
 	local playButton = makeStageButton(`Spin Wheel ({costText})`, UDim2.fromOffset(105, 84), function()
@@ -1528,6 +1801,17 @@ local function rebuildStaticButtons(state)
 				if not isGambleUnlocked(currentState, gambleName) then
 					return
 				end
+
+				local run = currentState and currentState.Run
+				local cost = gamble.Cost or 0
+
+				if not run or (run.Cash or 0) < cost then
+					resultText.Text = `Not enough Tokens. Need {cost}.`
+					resultText.TextColor3 = Color3.fromRGB(255, 90, 90)
+					resultText.Visible = true
+					return
+				end
+
 				if not animatingGamble and not activeMiniGame then
 					if gambleName == "GuessingGame" then
 						showGuessingGameChoices()
@@ -1598,6 +1882,86 @@ local function rebuildStaticButtons(state)
 		end
 	end
 
+	local itemOrder = {}
+	if state.Config.Items then
+		for name in pairs(state.Config.Items) do
+			table.insert(itemOrder, name)
+		end
+		table.sort(itemOrder)
+	end
+	for index, itemName in ipairs(itemOrder) do
+		if not itemButtons[itemName] then
+			local item = state.Config.Items[itemName]
+			local button = makeButton(itemLibraryScroll, "", index, function()
+				-- library is informational only
+			end)
+			button.Size = UDim2.fromOffset(170, 150)
+			button.Text = ""
+			button.TextTransparency = 1
+			itemButtons[itemName] = button
+			local sprite = Instance.new("ImageLabel")
+			sprite.Name = "Sprite"
+			sprite.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
+			sprite.BackgroundTransparency = 0.15
+			sprite.Position = UDim2.fromOffset(45, 16)
+			sprite.Size = UDim2.fromOffset(80, 80)
+			sprite.ScaleType = Enum.ScaleType.Fit
+			sprite.Parent = button
+			addCorner(sprite, 8)
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Name = "Name"
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Position = UDim2.fromOffset(10, 104)
+			nameLabel.Size = UDim2.new(1, -20, 0, 28)
+			nameLabel.Font = FONT
+			nameLabel.TextColor3 = Color3.fromRGB(255, 230, 166)
+			nameLabel.TextSize = 14
+			nameLabel.TextWrapped = true
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Center
+			nameLabel.Parent = button
+			local infoLabel = Instance.new("TextLabel")
+			infoLabel.Name = "Info"
+			infoLabel.BackgroundTransparency = 1
+			infoLabel.Position = UDim2.fromOffset(10, 130)
+			infoLabel.Size = UDim2.new(1, -20, 0, 16)
+			infoLabel.Font = FONT
+			infoLabel.TextColor3 = Color3.fromRGB(190, 196, 210)
+			infoLabel.TextSize = 11
+			infoLabel.TextWrapped = true
+			infoLabel.TextXAlignment = Enum.TextXAlignment.Center
+			infoLabel.TextYAlignment = Enum.TextYAlignment.Center
+			infoLabel.Parent = button
+			setTooltip(button, function()
+				local state = currentState
+				local currentItem = state and state.Config and state.Config.Items and state.Config.Items[itemName]
+				if not currentItem then
+					return "Unavailable"
+				end
+				local unlocked = currentItem.AlwaysUnlocked == true
+				if not unlocked and state and state.ItemState and state.ItemState.Unlocks then
+					unlocked = state.ItemState.Unlocks[itemName] == true
+				end
+				if not unlocked and state and state.Meta and state.Meta.ItemUnlocks then
+					unlocked = state.Meta.ItemUnlocks[itemName] == true
+				end
+				local requirement = currentItem.UnlockText or "Unlock requirement unknown."
+				if currentItem.AlwaysUnlocked then
+					requirement = "Always unlocked."
+				end
+				local progressText = ""
+				local progress = state and state.ItemState and state.ItemState.Progress and state.ItemState.Progress[itemName]
+				if not currentItem.AlwaysUnlocked and type(progress) == "table" and progress.Goal then
+					local current = math.min(tonumber(progress.Current) or 0, tonumber(progress.Goal) or 0)
+					progressText = `\nProgress: {current}/{progress.Goal}`
+				end
+				if unlocked then
+					return `{currentItem.Name or itemName}\n{currentItem.Tooltip or "No tooltip yet."}\nRarity: {currentItem.Rarity or "Unknown"}{progressText}`
+				end
+				return `???\nUnlock: {requirement}{progressText}`
+			end)
+		end
+	end
+
 	for index = 1, 5 do
 		if not mapButtons[index] then
 			local button = Instance.new("TextButton")
@@ -1606,7 +1970,7 @@ local function rebuildStaticButtons(state)
 			button.BorderSizePixel = 0
 			button.LayoutOrder = index
 			button.Size = UDim2.fromOffset(78, 78)
-			button.Font = RUSTIC_FONT
+			button.Font = FONT
 			button.Text = ""
 			button.TextColor3 = Color3.fromRGB(246, 248, 252)
 			button.TextSize = 16
@@ -1647,14 +2011,29 @@ local function setButtonUsable(button: TextButton, usable: boolean)
 	button.TextColor3 = if usable then Color3.fromRGB(246, 248, 252) else Color3.fromRGB(140, 146, 158)
 end
 
+local function maybeOpenTutorial(state)
+	local meta = state and state.Meta
+	if tutorialDismissedThisSession then
+		return
+	end
+	if meta and meta.TutorialSeen == true then
+		return
+	end
+	tutorialOpen = true
+	tutorialOverlay.Visible = true
+	refreshTutorialPage()
+end
+
 render = function()
 	local state = currentState
 	rebuildStaticButtons(state)
 	setCasinoOpen(casinoOpen)
 	setShopOpen(shopOpen)
 	setMachineShopOpen(tokenShopOpen)
+	setItemLibraryOpen(itemLibraryOpen)
 	setMapOpen(mapOpen)
 	setConfirmRunOpen(confirmRunOpen)
+	tutorialOverlay.Visible = tutorialOpen
 
 	if not state then
 		stats.Text = "Loading..."
@@ -1662,6 +2041,8 @@ render = function()
 		heartsPanel.Visible = false
 		return
 	end
+
+	maybeOpenTutorial(state)
 
 	local run = state.Run
 	local meta = state.Meta
@@ -1744,6 +2125,42 @@ render = function()
 		setButtonUsable(button, canUse)
 	end
 
+	for itemName, button in pairs(itemButtons) do
+		local item = state.Config.Items and state.Config.Items[itemName]
+		if item then
+			local unlocked = false
+			if item.AlwaysUnlocked then
+				unlocked = true
+			elseif state.ItemState and state.ItemState.Unlocks then
+				unlocked = state.ItemState.Unlocks[itemName] == true
+			elseif state.Meta and state.Meta.ItemUnlocks then
+				unlocked = state.Meta.ItemUnlocks[itemName] == true
+			end
+			local spriteId = item.Sprite or ""
+			local nameLabel = button:FindFirstChild("Name")
+			local infoLabel = button:FindFirstChild("Info")
+			local image = button:FindFirstChild("Sprite")
+			if image and image:IsA("ImageLabel") then
+				image.Image = if unlocked then spriteId else ""
+				image.ImageTransparency = if unlocked and spriteId ~= "" then 0 else 0.55
+				image.BackgroundColor3 = if unlocked then Color3.fromRGB(18, 20, 26) else Color3.fromRGB(40, 42, 48)
+			end
+			if nameLabel and nameLabel:IsA("TextLabel") then
+				nameLabel.Text = if unlocked then item.Name or itemName else "???"
+				nameLabel.TextColor3 = if unlocked then Color3.fromRGB(255, 230, 166) else Color3.fromRGB(150, 154, 166)
+			end
+			if infoLabel and infoLabel:IsA("TextLabel") then
+				infoLabel.Text = if unlocked then item.Rarity or "" else "Locked"
+			end
+			button.BackgroundColor3 = if unlocked then Color3.fromRGB(54, 63, 82) else Color3.fromRGB(31, 33, 39)
+			button.Text = ""
+			button.Visible = itemLibraryOpen
+			button.Active = true
+			button.AutoButtonColor = false
+			button.TextColor3 = Color3.fromRGB(246, 248, 252)
+		end
+	end
+
 	for index, button in ipairs(mapButtons) do
 		local node = state.MapPath and state.MapPath[index]
 		if node then
@@ -1792,6 +2209,12 @@ render = function()
 		end
 	end
 end
+
+messageEvent.OnClientEvent:Connect(function(text)
+	resultText.Text = tostring(text)
+	resultText.TextColor3 = Color3.fromRGB(255, 255, 255)
+	resultText.Visible = true
+end)
 
 stateEvent.OnClientEvent:Connect(function(state)
 	currentState = state
